@@ -72,8 +72,8 @@ const ChatList: React.FC = () => {
             >
               {data?.chats.map((c) => (
                 <React.Fragment key={c._id}>
-                  <ChatListItem name={c.name} />
                   <Divider sx={{ borderColor: "rgba(255,255,255,0.02)" }} />
+                  <ChatListItem chat={c} />
                 </React.Fragment>
               ))}
 

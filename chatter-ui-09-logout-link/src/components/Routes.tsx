@@ -4,6 +4,7 @@ import Signup from "./auth/Signup";
 import Home from "./home/Home";
 import Guard from "./auth/Guard";
 import LandingPage from "./landing/landing";
+import ChatLayout from "./chat/ChatLayout";
 
 const router = createBrowserRouter([
   {
@@ -26,6 +27,14 @@ const router = createBrowserRouter([
       </Guard>
     ),
   },
+  {
+  path: "/chats/:_id",
+  element: (
+    <Guard>
+      <ChatLayout />
+    </Guard>
+  ),
+},
 ]);
 
 export default router;
