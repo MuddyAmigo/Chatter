@@ -38,7 +38,7 @@ const ChatLayout: React.FC = () => {
           style={{
             flex: 1,
             height: "100%",
-            overflow: "auto",
+            overflow: "hidden", /* Changed from "auto" to "hidden" */
             background: "#0a1020",
             borderLeft: "1px solid rgba(255,255,255,0.1)",
           }}

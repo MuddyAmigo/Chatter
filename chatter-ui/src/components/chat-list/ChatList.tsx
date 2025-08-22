@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
 import List from "@mui/material/List";
 import Stack from "@mui/material/Stack";
@@ -6,6 +6,7 @@ import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { useGetChats } from "../../hooks/useGetChats";
+import { usePath } from "../../hooks/usePath";
 import ChatListItem from "./chat-list-item/ChatListitem";
 import ChatListHeader from "./chal-list-header/ChatListHeader";
 import ChatListAdd from "./chat-list-add/ChatListAdd";
@@ -18,10 +19,19 @@ const SAMPLE_CHATS = new Array(12).fill(null).map((_, i) => ({
 
 const ChatList: React.FC = () => {
   const [chatListAddVisible, setChatListAddVisible] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState("");
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
   const headerHeight = isSmall ? 56 : 64;
   const {data} = useGetChats();
+  const { path } = usePath();
+
+  useEffect(() => {
+    const pathSplit = path.split("chats/");
+    if (pathSplit.length === 2) {
+      setSelectedChatId(pathSplit[1]);
+    }
+  }, [path]);
   return (
     <>
       <ChatListAdd
@@ -70,12 +80,14 @@ const ChatList: React.FC = () => {
                 bgcolor: "transparent",
               }}
             >
-              {data?.chats.map((c) => (
-                <React.Fragment key={c._id}>
-                  <Divider sx={{ borderColor: "rgba(255,255,255,0.02)" }} />
-                  <ChatListItem chat={c} />
-                </React.Fragment>
-              ))}
+              {data?.chats
+                .map((c) => (
+                  <React.Fragment key={c._id}>
+                    <Divider sx={{ borderColor: "rgba(255,255,255,0.02)" }} />
+                    <ChatListItem chat={c} selected={c._id === selectedChatId} />
+                  </React.Fragment>
+                ))
+                .reverse()}
 
               {data?.chats.length === 0 && (
                 <Box sx={{ p: 3 }}>

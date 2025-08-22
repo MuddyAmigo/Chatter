@@ -21,7 +21,22 @@ export class ChatsService {
   }
 
   async findOne(_id: string) {
-    return this.chatsRepository.findOne({ where: { id: _id } });
+    // Fix: Use _id instead of id
+    return this.chatsRepository.findOne({ _id });
+  }
+
+  userChatFilter(userId: string) {
+    return {
+      $or: [
+        { userId },
+        {
+          userIds: {
+            $in: [userId],
+          },
+        },
+        { isPrivate: false },
+      ],
+    };
   }
 
   update(id: number, updateChatInput: UpdateChatInput) {
