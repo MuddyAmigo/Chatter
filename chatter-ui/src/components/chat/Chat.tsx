@@ -28,24 +28,92 @@ const Chat = () => {
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
   const { data: latestMessage } = useMessageCreated({ chatId });
+  const [allMessages, setAllMessages] = useState<any[]>([]);
 
-  console.log(latestMessage);
+
+  console.log("=== CHAT DEBUG ===");
+  console.log("Current chatId:", chatId);
+  console.log("Latest message data:", latestMessage);
+  console.log("All messages count:", allMessages.length);
+  console.log("Fetched messages count:", messages?.messages?.length || 0);
+  if (allMessages.length > 0) {
+    console.log("Message chatIds:", allMessages.map((m: any) => ({ id: m._id, chatId: m.chatId, content: m.content.substring(0, 20) })));
+  }
+  console.log("==================");
 
   // New improved scroll function that only scrolls the messages container
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
       const container = messagesContainerRef.current;
-      // Use a slight delay to ensure DOM updates are complete
       setTimeout(() => {
         container.scrollTop = container.scrollHeight;
       }, 100);
     }
   };
 
+   useEffect(() => {
+    if (messages?.messages) {
+      const sorted = [...messages.messages].sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      // Only update if we don't have messages yet, or if we have fewer messages than what's fetched
+      setAllMessages((prev) => {
+        if (prev.length === 0 || sorted.length > prev.length) {
+          return sorted;
+        }
+        // If fetched messages are the same or fewer, keep existing messages and merge any new ones
+        const existingIds = new Set(prev.map((m: any) => m._id));
+        const newMessages = sorted.filter((m) => !existingIds.has(m._id));
+        if (newMessages.length > 0) {
+          return [...prev, ...newMessages].sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        }
+        return prev;
+      });
+    }
+  }, [messages]);
+
+  // Merge in latest subscription message (avoid duplicates) and keep sort
+  useEffect(() => {
+    const incoming = (latestMessage as any)?.messageCreated;
+    if (incoming?._id) {
+      // Check if this message belongs to the current chat
+      if (incoming.chatId !== chatId) {
+        console.log("Ignoring message from different chat:", incoming.chatId, "current:", chatId);
+        return;
+      }
+      
+      setAllMessages((prev: any) => {
+        // Check if message already exists
+        if (prev.some((m: any) => m._id === incoming._id)) return prev;
+        
+        // Add new message and sort
+        const merged = [...prev, incoming].sort(
+          (a: any, b: any) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        
+        console.log("Added new real-time message to chat:", chatId, incoming);
+        return merged;
+      });
+    }
+  }, [latestMessage, chatId]);
+
+
+
+  // Scroll on path change
   useEffect(() => {
     setMessage("");
     scrollToBottom();
-  }, [location.pathname, messages]);
+  }, [location.pathname]);
+
+  // Scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [allMessages]);
 
   const handleCreateMessage = async () => {
     if (!message.trim()) return;
@@ -113,8 +181,10 @@ const Chat = () => {
           }
         }}
       >
-        {messages?.messages.map((message, index) => (
-          <Grid container alignItems="center" marginBottom="1.2rem" key={index}>
+        {allMessages
+          ?.filter((msg: any) => msg.chatId === chatId) // Filter messages for current chat only
+          ?.map((message: any, index: number) => (
+          <Grid container alignItems="center" marginBottom="1.2rem" key={message._id || index}>
             <Grid item xs={3} md={1}>
               <Avatar 
                 src="" 

@@ -5,9 +5,15 @@ import { GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 const getCurrentUserByContext = (context: ExecutionContext): User => {
   if (context.getType() === 'http') {
     return context.switchToHttp().getRequest().user;
-  } else if (context.getType<GqlContextType>() === 'graphql') {
-    return GqlExecutionContext.create(context).getContext().req.user;
   }
+  if (context.getType<GqlContextType>() === 'graphql') {
+    const gqlCtx = GqlExecutionContext.create(context).getContext();
+    return (
+      gqlCtx.req?.user || // queries/mutations
+      gqlCtx.user // websocket (set in onConnect)
+    );
+  }
+  return undefined;
 };
 
 export const CurrentUser = createParamDecorator(

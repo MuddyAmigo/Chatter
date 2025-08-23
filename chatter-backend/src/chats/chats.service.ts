@@ -16,8 +16,10 @@ export class ChatsService {
     });
   }
 
-  async findAll() {
-    return this.chatsRepository.find({});
+  async findAll(userId: string) {
+    return this.chatsRepository.find({
+      ...this.userChatFilter(userId),
+    });
   }
 
   async findOne(_id: string) {
@@ -25,16 +27,12 @@ export class ChatsService {
     return this.chatsRepository.findOne({ _id });
   }
 
-  userChatFilter(userId: string) {
+  private userChatFilter(userId: string) {
     return {
       $or: [
-        { userId },
-        {
-          userIds: {
-            $in: [userId],
-          },
-        },
-        { isPrivate: false },
+        { userId: userId },      // creator / owner
+        { userIds: userId },     // participant (Mongo matches element in array)
+        { isPrivate: false },    // public chat
       ],
     };
   }

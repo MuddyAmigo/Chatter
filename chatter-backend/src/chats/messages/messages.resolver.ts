@@ -37,18 +37,22 @@ export class MessagesResolver {
   }
 
 @Subscription(() => Message, {
-    filter: (payload, variables, context) => {
-      const userId = context.req.user._id;
-      return (
-        payload.messageCreated.chatId === variables.chatId &&
-        userId !== payload.messageCreated.userId
-      );
-    },
-  })
-  messageCreated(
-    @Args() messageCreatedArgs: MessageCreatedArgs,
-    @CurrentUser() user: TokenPayload,
-  ) {
-    return this.messagesService.messageCreated(messageCreatedArgs, user._id);
-  }
+  filter: (payload, variables, context) => {
+    const userId =
+      context.user?._id || // graphql-ws (onConnect)
+      context.connection?.context?.user?._id || // fallback older shapes
+      context.req?.user?._id; // HTTP fallback (not typical for ws)
+    if (!userId) return false;
+    return (
+      payload.messageCreated.chatId === variables.chatId &&
+      userId !== payload.messageCreated.userId
+    );
+  },
+})
+messageCreated(
+  @Args() messageCreatedArgs: MessageCreatedArgs,
+  @CurrentUser() user: TokenPayload,
+) {
+  return this.messagesService.messageCreated(messageCreatedArgs, user._id);
+}
 }

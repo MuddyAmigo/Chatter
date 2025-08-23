@@ -31,14 +31,23 @@ export class AuthService {
       expires,
     });
   }
-   verifyWs(request: Request): TokenPayload {
-    const cookies: string[] = request.headers.cookie.split('; ');
-    const authCookie = cookies.find((cookie) =>
-      cookie.includes('Authentication'),
-    );
-    const jwt = authCookie.split('Authentication=')[1];
-    return this.jwtService.verify(jwt);
+
+
+  verifyWs(request: Request): TokenPayload {
+  const cookieHeader = request.headers.cookie;
+  if (!cookieHeader) {
+    throw new Error('No cookies present');
   }
+  const cookies = cookieHeader.split('; ').map(c => c.trim());
+  const authCookie = cookies.find(c => c.startsWith('Authentication='));
+  if (!authCookie) {
+    throw new Error('Authentication cookie missing');
+  }
+  const jwt = authCookie.substring('Authentication='.length);
+  return this.jwtService.verify<TokenPayload>(jwt);
+}
+
+
   logout(response: Response) {
     response.cookie('Authentication', '', {
       httpOnly: true,
